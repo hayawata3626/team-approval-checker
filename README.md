@@ -17,7 +17,7 @@ conditions.
 
 ```yaml
 - name: Check Approvals
-  uses: hayawata3626/team-approval-checker@v1
+  uses: hayawata3626/team-approval-checker@v1.0.0
   with:
     conditions: '[{"team": "team1", "minimumCount": 1}]'
     github-token: ${{ secrets.GITHUB_TOKEN }}

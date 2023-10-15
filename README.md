@@ -1,4 +1,4 @@
-# Check Approvals Action
+# team-approval-checker
 
 This GitHub Action checks the approvals for a pull request based on specified
 conditions.

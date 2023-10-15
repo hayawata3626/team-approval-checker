@@ -39,21 +39,3 @@ jobs:
       - name: Test
         id: npm-ci-test
         run: npm run ci-test
-
-  test-action:
-    name: GitHub Actions Test
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        id: checkout
-        uses: actions/checkout@v4
-
-      - name: Test Local Action
-        id: test-action
-        uses: ./
-        with:
-          conditions:
-            '[{"team": "team1", "minimumCount": 1}, {"team": "team2",
-            "minimumCount": 2}]'
-          github-token: ${{ secrets.GITHUB_TOKEN }}

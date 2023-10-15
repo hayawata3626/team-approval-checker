@@ -1,18 +1,14 @@
-name: 'The name of your action here'
-description: 'Provide a description here'
-author: 'Your name or organization here'
+name: 'Check Approvals'
+description: 'Checks approvals based on conditions'
+author: '@hayawata3626'
 
-# Define your inputs here.
 inputs:
-  milliseconds:
-    description: 'Your input description here'
+  conditions:
+    description: 'JSON string of approval conditions'
     required: true
-    default: '1000'
-
-# Define your outputs here.
-outputs:
-  time:
-    description: 'Your output description here'
+  github-token:
+    description: 'GitHub token'
+    required: true
 
 runs:
   using: node20

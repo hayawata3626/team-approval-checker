@@ -1,16 +1,16 @@
 {
-  "name": "typescript-action",
-  "description": "GitHub Actions TypeScript template",
+  "name": "team-approval-checker",
+  "description": "Team Approval Checker",
   "version": "0.0.0",
-  "author": "",
+  "author": "hayawata3626",
   "private": true,
-  "homepage": "https://github.com/actions/typescript-action",
+  "homepage": "https://github.com/hayawata3626/team-approval-checker",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/actions/typescript-action.git"
+    "url": "git+https://github.com/hayawata3626/team-approval-checker.git"
   },
   "bugs": {
-    "url": "https://github.com/actions/typescript-action/issues"
+    "url": "https://github.com/hayawata3626/team-approval-checker/issues"
   },
   "keywords": [
     "actions",

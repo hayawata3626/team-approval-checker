@@ -33249,7 +33249,6 @@ async function run() {
                 Authorization: `token ${GITHUB_TOKEN}`
             }
         });
-        core.setOutput('response', response);
         const approvedReviews = response.data.filter((review) => review.state === 'APPROVED');
         const teamApprovalStatus = await Promise.all(conditions.map(async (c) => {
             const res = await axios_1.default.get(`https://api.github.com/orgs/${owner}/teams/${c.team}/members`, {
@@ -33266,7 +33265,6 @@ async function run() {
                 actuallCount: 0
             };
         }));
-        core.setOutput('teamApprovalStatus', teamApprovalStatus);
         for (const review of approvedReviews) {
             for (const conditionResult of teamApprovalStatus) {
                 if (conditionResult.members.some(member => member.login === review.user.login)) {

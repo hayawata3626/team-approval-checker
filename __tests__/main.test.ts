@@ -26,9 +26,9 @@ describe('run function', () => {
         { state: 'PENDING', user: { login: 'user1' } },
         { state: 'PENDING', user: { login: 'user2' } }
       ])
-      .get('/orgs/owner/team1/members')
+      .get('/orgs/owner/teams/team1/members')
       .reply(200, [{ login: 'user1' }, { login: 'user2' }])
-      .get('/orgs/owner/team2/members')
+      .get('/orgs/owner/teams/team2/members')
       .reply(200, [{ login: 'user3' }, { login: 'user4' }])
     ;(core.getInput as jest.MockedFunction<typeof core.getInput>)
       .mockImplementationOnce(

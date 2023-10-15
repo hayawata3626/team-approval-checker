@@ -48,7 +48,7 @@ export async function run(): Promise<void> {
     const teamApprovalStatus: TeamApprovalStatus[] = await Promise.all(
       conditions.map(async c => {
         const res = await axios.get(
-          `https://api.github.com/orgs/${owner}/${c.team}/members`,
+          `https://api.github.com/orgs/${owner}/teams/${c.team}/members`,
           {
             headers: {
               Accept: 'application/vnd.github.v3+json',

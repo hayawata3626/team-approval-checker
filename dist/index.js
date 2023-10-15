@@ -33251,7 +33251,7 @@ async function run() {
         });
         const approvedReviews = response.data.filter((review) => review.state === 'APPROVED');
         const teamApprovalStatus = await Promise.all(conditions.map(async (c) => {
-            const res = await axios_1.default.get(`https://api.github.com/orgs/${owner}/${c.team}/members`, {
+            const res = await axios_1.default.get(`https://api.github.com/orgs/${owner}/teams/${c.team}/members`, {
                 headers: {
                     Accept: 'application/vnd.github.v3+json',
                     Authorization: `token ${GITHUB_TOKEN}`

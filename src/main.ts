@@ -41,6 +41,8 @@ export async function run(): Promise<void> {
       }
     )
 
+    core.setOutput('response', response)
+
     const approvedReviews = response.data.filter(
       (review: Review) => review.state === 'APPROVED'
     )
@@ -67,6 +69,8 @@ export async function run(): Promise<void> {
         }
       })
     )
+
+    core.setOutput('teamApprovalStatus', teamApprovalStatus)
 
     for (const review of approvedReviews) {
       for (const conditionResult of teamApprovalStatus) {

@@ -1,5 +1,21 @@
 import * as core from '@actions/core'
-import { wait } from './wait'
+import * as github from '@actions/github'
+import axios from 'axios'
+import { Member, Review } from './types'
+
+type Condition = {
+  team: string
+  minimumCount: number
+}
+
+type Parameters = Condition[]
+
+type TeamApprovalStatus = {
+  team: string
+  members: Member[]
+  minimumCount: number
+  actuallCount: number
+}
 
 /**
  * The main function for the action.
@@ -7,20 +23,76 @@ import { wait } from './wait'
  */
 export async function run(): Promise<void> {
   try {
-    const ms: string = core.getInput('milliseconds')
+    const conditionsInput = core.getInput('conditions')
+    const conditions: Parameters = JSON.parse(conditionsInput)
+    const owner: string = github.context.repo.owner
+    const repo: string = github.context.repo.repo
+    const pullNumber: number = github.context.payload.pull_request
+      ?.number as number
+    const GITHUB_TOKEN: string = core.getInput('github-token')
 
-    // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
-    core.debug(`Waiting ${ms} milliseconds ...`)
+    const response = await axios.get(
+      `https://api.github.com/repos/${owner}/${repo}/pulls/${pullNumber}/reviews`,
+      {
+        headers: {
+          Accept: 'application/vnd.github.v3+json',
+          Authorization: `token ${GITHUB_TOKEN}`
+        }
+      }
+    )
 
-    // Log the current timestamp, wait, then log the new timestamp
-    core.debug(new Date().toTimeString())
-    await wait(parseInt(ms, 10))
-    core.debug(new Date().toTimeString())
+    const approvedReviews = response.data.filter(
+      (review: Review) => review.state === 'APPROVED'
+    )
 
-    // Set outputs for other workflow steps to use
-    core.setOutput('time', new Date().toTimeString())
+    const teamApprovalStatus: TeamApprovalStatus[] = await Promise.all(
+      conditions.map(async c => {
+        const res = await axios.get(
+          `https://api.github.com/orgs/${owner}/${c.team}/members`,
+          {
+            headers: {
+              Accept: 'application/vnd.github.v3+json',
+              Authorization: `token ${GITHUB_TOKEN}`
+            }
+          }
+        )
+
+        const members = res.data
+
+        return {
+          team: c.team,
+          minimumCount: c.minimumCount,
+          members,
+          actuallCount: 0
+        }
+      })
+    )
+
+    for (const review of approvedReviews) {
+      for (const conditionResult of teamApprovalStatus) {
+        if (
+          conditionResult.members.some(
+            member => member.login === review.user.login
+          )
+        ) {
+          conditionResult.actuallCount++
+        }
+      }
+    }
+
+    const isPassAllConditions = teamApprovalStatus.every(
+      (conditionResult: TeamApprovalStatus) =>
+        conditionResult.actuallCount >= conditionResult.minimumCount
+    )
+
+    if (!isPassAllConditions) {
+      core.setFailed(
+        'The pull request is not approved based on the specified conditions.'
+      )
+    }
+
+    console.log(response, 'response')
   } catch (error) {
-    // Fail the workflow run if an error occurs
     if (error instanceof Error) core.setFailed(error.message)
   }
 }

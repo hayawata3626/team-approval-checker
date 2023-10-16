@@ -30,6 +30,10 @@ export async function run(): Promise<void> {
     const pullNumber: number = github.context.payload.pull_request
       ?.number as number
     const GITHUB_TOKEN: string = core.getInput('github-token')
+    console.log('conditionsInput', conditionsInput)
+    console.log('owner', conditionsInput)
+    console.log('repo', conditionsInput)
+    console.log('pullNumber', pullNumber)
 
     const response = await axios.get(
       `https://api.github.com/repos/${owner}/${repo}/pulls/${pullNumber}/reviews`,

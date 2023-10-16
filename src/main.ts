@@ -31,8 +31,8 @@ export async function run(): Promise<void> {
       ?.number as number
     const GITHUB_TOKEN: string = core.getInput('github-token')
     console.log('conditionsInput', conditionsInput)
-    console.log('owner', conditionsInput)
-    console.log('repo', conditionsInput)
+    console.log('owner', owner)
+    console.log('repo', repo)
     console.log('pullNumber', pullNumber)
 
     const response = await axios.get(

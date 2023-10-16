@@ -33244,8 +33244,8 @@ async function run() {
             ?.number;
         const GITHUB_TOKEN = core.getInput('github-token');
         console.log('conditionsInput', conditionsInput);
-        console.log('owner', conditionsInput);
-        console.log('repo', conditionsInput);
+        console.log('owner', owner);
+        console.log('repo', repo);
         console.log('pullNumber', pullNumber);
         const response = await axios_1.default.get(`https://api.github.com/repos/${owner}/${repo}/pulls/${pullNumber}/reviews`, {
             headers: {

@@ -33249,6 +33249,9 @@ async function run() {
                 Authorization: `token ${GITHUB_TOKEN}`
             }
         });
+        if (response.data.length === 0) {
+            core.setFailed('There are no reviews for this pull request yet. Or the url is incorrect.');
+        }
         const approvedReviews = response.data.filter((review) => review.state === 'APPROVED');
         const teamApprovalStatus = await Promise.all(conditions.map(async (c) => {
             const res = await axios_1.default.get(`https://api.github.com/orgs/${owner}/teams/${c.team}/members`, {

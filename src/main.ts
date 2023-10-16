@@ -41,6 +41,12 @@ export async function run(): Promise<void> {
       }
     )
 
+    if (response.data.length === 0) {
+      core.setFailed(
+        'There are no reviews for this pull request yet. Or the url is incorrect.'
+      )
+    }
+
     const approvedReviews = response.data.filter(
       (review: Review) => review.state === 'APPROVED'
     )

@@ -57,6 +57,7 @@ export async function run(): Promise<void> {
 
     const teamApprovalStatus: TeamApprovalStatus[] = await Promise.all(
       conditions.map(async c => {
+        console.log(c, 'c')
         const res = await axios.get(
           `https://api.github.com/orgs/${owner}/teams/${c.team}/members`,
           {
@@ -67,7 +68,16 @@ export async function run(): Promise<void> {
           }
         )
 
+        console.log(res, 'res')
+        if (!res.data) {
+          core.setFailed(
+            'There are no teams for this organization. Or the url is incorrect.'
+          )
+        }
+
         const members = res.data
+
+        console.log(members, 'members')
 
         return {
           team: c.team,

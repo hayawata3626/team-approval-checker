@@ -30,10 +30,6 @@ export async function run(): Promise<void> {
     const pullNumber: number = github.context.payload.pull_request
       ?.number as number
     const GITHUB_TOKEN: string = core.getInput('github-token')
-    console.log('conditionsInput', conditionsInput)
-    console.log('owner', owner)
-    console.log('repo', repo)
-    console.log('pullNumber', pullNumber)
 
     const response = await axios.get(
       `https://api.github.com/repos/${owner}/${repo}/pulls/${pullNumber}/reviews`,
@@ -57,7 +53,6 @@ export async function run(): Promise<void> {
 
     const teamApprovalStatus: TeamApprovalStatus[] = await Promise.all(
       conditions.map(async c => {
-        console.log(c, 'c')
         const res = await axios.get(
           `https://api.github.com/orgs/${owner}/teams/${c.team}/members`,
           {
@@ -68,7 +63,6 @@ export async function run(): Promise<void> {
           }
         )
 
-        console.log(res, 'res')
         if (!res.data) {
           core.setFailed(
             'There are no teams for this organization. Or the url is incorrect.'
@@ -76,8 +70,6 @@ export async function run(): Promise<void> {
         }
 
         const members = res.data
-
-        console.log(members, 'members')
 
         return {
           team: c.team,
@@ -110,8 +102,6 @@ export async function run(): Promise<void> {
         'The pull request is not approved based on the specified conditions.'
       )
     }
-
-    console.log(response, 'response')
   } catch (error) {
     if (error instanceof Error) core.setFailed(error.message)
   }

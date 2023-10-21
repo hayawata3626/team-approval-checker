@@ -33243,10 +33243,6 @@ async function run() {
         const pullNumber = github.context.payload.pull_request
             ?.number;
         const GITHUB_TOKEN = core.getInput('github-token');
-        console.log('conditionsInput', conditionsInput);
-        console.log('owner', owner);
-        console.log('repo', repo);
-        console.log('pullNumber', pullNumber);
         const response = await axios_1.default.get(`https://api.github.com/repos/${owner}/${repo}/pulls/${pullNumber}/reviews`, {
             headers: {
                 Accept: 'application/vnd.github.v3+json',
@@ -33258,19 +33254,16 @@ async function run() {
         }
         const approvedReviews = response.data.filter((review) => review.state === 'APPROVED');
         const teamApprovalStatus = await Promise.all(conditions.map(async (c) => {
-            console.log(c, 'c');
             const res = await axios_1.default.get(`https://api.github.com/orgs/${owner}/teams/${c.team}/members`, {
                 headers: {
                     Accept: 'application/vnd.github.v3+json',
                     Authorization: `token ${GITHUB_TOKEN}`
                 }
             });
-            console.log(res, 'res');
             if (!res.data) {
                 core.setFailed('There are no teams for this organization. Or the url is incorrect.');
             }
             const members = res.data;
-            console.log(members, 'members');
             return {
                 team: c.team,
                 minimumCount: c.minimumCount,
@@ -33289,7 +33282,6 @@ async function run() {
         if (!isPassAllConditions) {
             core.setFailed('The pull request is not approved based on the specified conditions.');
         }
-        console.log(response, 'response');
     }
     catch (error) {
         if (error instanceof Error)

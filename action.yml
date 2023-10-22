@@ -1,4 +1,4 @@
-name: 'Check Approvals'
+name: 'Team Approval Checker'
 description: 'Checks approvals based on conditions'
 author: '@hayawata3626'
 

@@ -43,7 +43,7 @@ export async function run(): Promise<void> {
 
     if (response.data.length === 0) {
       core.setFailed(
-        'There are no reviews for this pull request yet. Or the url is incorrect.'
+        'There are no reviews for this pull request yet.'
       )
     }
 
@@ -65,7 +65,7 @@ export async function run(): Promise<void> {
 
         if (!res.data) {
           core.setFailed(
-            'There are no teams for this organization. Or the url is incorrect.'
+            'Error:There are no teams for this organization.'
           )
         }
 
@@ -99,7 +99,7 @@ export async function run(): Promise<void> {
 
     if (!isPassAllConditions) {
       core.setFailed(
-        'The pull request is not approved based on the specified conditions.'
+        'Please ask for approval from the avant-basic-eng-approvers team. https://github.com/orgs/AvantFinCo/teams/avant-basic-eng-approvers'
       )
     }
   } catch (error) {

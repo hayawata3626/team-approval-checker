@@ -17,10 +17,15 @@ type TeamApprovalStatus = {
   actuallCount: number
 }
 
-async function getAllReviews(owner: string, repo: string, pullNumber: number, GITHUB_TOKEN: string) {
-  let allReviews: Review[] = [];
-  let page = 1;
-  let perPage = 100;
+async function getAllReviews(
+  owner: string,
+  repo: string,
+  pullNumber: number,
+  GITHUB_TOKEN: string
+) {
+  let allReviews: Review[] = []
+  let page = 1
+  let perPage = 100
 
   while (true) {
     const reviewsResponse = await axios.get(
@@ -35,16 +40,16 @@ async function getAllReviews(owner: string, repo: string, pullNumber: number, GI
           per_page: perPage
         }
       }
-    );
+    )
 
-    allReviews = allReviews.concat(reviewsResponse.data);
+    allReviews = allReviews.concat(reviewsResponse.data)
     if (reviewsResponse.data.length < perPage) {
-      break;
+      break
     }
-    page++;
+    page++
   }
 
-  return allReviews;
+  return allReviews
 }
 
 /**
@@ -61,11 +66,16 @@ export async function run(): Promise<void> {
       ?.number as number
     const GITHUB_TOKEN: string = core.getInput('github-token')
 
-    const allReviews = await getAllReviews(owner, repo, pullNumber, GITHUB_TOKEN);
+    const allReviews = await getAllReviews(
+      owner,
+      repo,
+      pullNumber,
+      GITHUB_TOKEN
+    )
 
     if (allReviews.length === 0) {
       core.setFailed('There are no reviews for this pull request yet.')
-      return;
+      return
     }
 
     const approvedReviews = allReviews.filter(
@@ -85,7 +95,9 @@ export async function run(): Promise<void> {
         )
 
         if (!res.data) {
-          core.setFailed('There are no teams for this organization. Or the url is incorrect.')
+          core.setFailed(
+            'There are no teams for this organization. Or the url is incorrect.'
+          )
         }
 
         const members = res.data

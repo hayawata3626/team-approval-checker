@@ -43,7 +43,7 @@ jobs:
           private_key: ${{ secrets.PRIVATE_KEY }}
 
       - name: Run approval check
-        uses: hayawata3626/team-approval-checker@v1.0.8
+        uses: hayawata3626/team-approval-checker@v1.1.0
         with:
           conditions:
             '[{"team": "team1", "minimumCount": 3}, {"team": "team2",

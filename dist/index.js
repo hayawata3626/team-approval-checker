@@ -33230,6 +33230,29 @@ exports.run = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
 const axios_1 = __importDefault(__nccwpck_require__(8757));
+async function getAllReviews(owner, repo, pullNumber, GITHUB_TOKEN) {
+    let allReviews = [];
+    let page = 1;
+    let perPage = 100;
+    while (true) {
+        const reviewsResponse = await axios_1.default.get(`https://api.github.com/repos/${owner}/${repo}/pulls/${pullNumber}/reviews`, {
+            headers: {
+                Accept: 'application/vnd.github.v3+json',
+                Authorization: `token ${GITHUB_TOKEN}`
+            },
+            params: {
+                page: page,
+                per_page: perPage
+            }
+        });
+        allReviews = allReviews.concat(reviewsResponse.data);
+        if (reviewsResponse.data.length < perPage) {
+            break;
+        }
+        page++;
+    }
+    return allReviews;
+}
 /**
  * The main function for the action.
  * @returns {Promise<void>} Resolves when the action is complete.
@@ -33243,16 +33266,12 @@ async function run() {
         const pullNumber = github.context.payload.pull_request
             ?.number;
         const GITHUB_TOKEN = core.getInput('github-token');
-        const response = await axios_1.default.get(`https://api.github.com/repos/${owner}/${repo}/pulls/${pullNumber}/reviews`, {
-            headers: {
-                Accept: 'application/vnd.github.v3+json',
-                Authorization: `token ${GITHUB_TOKEN}`
-            }
-        });
-        if (response.data.length === 0) {
-            core.setFailed('There are no reviews for this pull request yet. Or the url is incorrect.');
+        const allReviews = await getAllReviews(owner, repo, pullNumber, GITHUB_TOKEN);
+        if (allReviews.length === 0) {
+            core.setFailed('There are no reviews for this pull request yet.');
+            return;
         }
-        const approvedReviews = response.data.filter((review) => review.state === 'APPROVED');
+        const approvedReviews = allReviews.filter((review) => review.state === 'APPROVED');
         const teamApprovalStatus = await Promise.all(conditions.map(async (c) => {
             const res = await axios_1.default.get(`https://api.github.com/orgs/${owner}/teams/${c.team}/members`, {
                 headers: {

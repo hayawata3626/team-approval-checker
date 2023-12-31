@@ -33231,9 +33231,9 @@ const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
 const axios_1 = __importDefault(__nccwpck_require__(8757));
 async function getAllReviews(owner, repo, pullNumber, GITHUB_TOKEN) {
+    const perPage = 100;
     let allReviews = [];
     let page = 1;
-    let perPage = 100;
     while (true) {
         const reviewsResponse = await axios_1.default.get(`https://api.github.com/repos/${owner}/${repo}/pulls/${pullNumber}/reviews`, {
             headers: {
@@ -33241,7 +33241,7 @@ async function getAllReviews(owner, repo, pullNumber, GITHUB_TOKEN) {
                 Authorization: `token ${GITHUB_TOKEN}`
             },
             params: {
-                page: page,
+                page,
                 per_page: perPage
             }
         });

@@ -43,6 +43,7 @@ rules:
     'import/no-namespace': 'off',
     'no-console': 'off',
     'no-unused-vars': 'off',
+    'no-constant-condition': ['error', { 'checkLoops': false }],
     'prettier/prettier': 'error',
     'semi': 'off',
     '@typescript-eslint/array-type': 'error',

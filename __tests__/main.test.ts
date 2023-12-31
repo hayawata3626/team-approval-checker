@@ -22,6 +22,7 @@ describe('run function', () => {
     const setFailedMock = jest.spyOn(core, 'setFailed')
     nock('https://api.github.com')
       .get('/repos/owner/repo/pulls/1/reviews')
+      .query({ page: 1, per_page: 100 })
       .reply(200, [
         { state: 'PENDING', user: { login: 'user1' } },
         { state: 'PENDING', user: { login: 'user2' } }

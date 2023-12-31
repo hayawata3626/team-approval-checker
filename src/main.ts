@@ -22,10 +22,10 @@ async function getAllReviews(
   repo: string,
   pullNumber: number,
   GITHUB_TOKEN: string
-) {
+): Promise<Review[]> {
+  const perPage = 100
   let allReviews: Review[] = []
   let page = 1
-  let perPage = 100
 
   while (true) {
     const reviewsResponse = await axios.get(
@@ -36,16 +36,18 @@ async function getAllReviews(
           Authorization: `token ${GITHUB_TOKEN}`
         },
         params: {
-          page: page,
+          page,
           per_page: perPage
         }
       }
     )
 
     allReviews = allReviews.concat(reviewsResponse.data)
+
     if (reviewsResponse.data.length < perPage) {
       break
     }
+
     page++
   }
 

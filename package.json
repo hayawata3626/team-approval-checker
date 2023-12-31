@@ -1,7 +1,7 @@
 {
   "name": "team-approval-checker",
   "description": "Team Approval Checker",
-  "version": "0.0.0",
+  "version": "1.2.0",
   "author": "hayawata3626",
   "private": true,
   "homepage": "https://github.com/hayawata3626/team-approval-checker",
@@ -33,7 +33,7 @@
     "package:watch": "npm run package -- --watch",
     "test": "(jest && make-coverage-badge --output-path ./badges/coverage.svg) || make-coverage-badge --output-path ./badges/coverage.svg",
     "all": "npm run format:write && npm run lint && npm run test && npm run package",
-    "prepare": "husky install" 
+    "prepare": "husky install"
   },
   "license": "MIT",
   "jest": {

@@ -1,7 +1,7 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 import axios from 'axios'
-import { Member, Review } from './types'
+import { Member, Review } from './types.js'
 
 type Condition = {
   team: string

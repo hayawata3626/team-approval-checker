@@ -13,6 +13,7 @@ ignorePatterns:
   - '**/dist/.*'
   - '**/coverage/.*'
   - '*.json'
+  - 'rollup.config.mjs'
 
 parser: '@typescript-eslint/parser'
 
@@ -41,6 +42,7 @@ rules:
     'eslint-comments/no-unused-disable': 'off',
     'i18n-text/no-en': 'off',
     'import/no-namespace': 'off',
+    'import/no-unresolved': 'off',
     'no-console': 'off',
     'no-unused-vars': 'off',
     'no-constant-condition': ['error', { 'checkLoops': false }],

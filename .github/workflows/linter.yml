@@ -8,6 +8,9 @@ on:
     branches-ignore:
       - main
 
+permissions:
+  contents: read
+
 jobs:
   lint:
     name: Lint Code Base
@@ -21,13 +24,16 @@ jobs:
     steps:
       - name: Checkout
         id: checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
 
       - name: Setup Node.js
         id: setup-node
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 18
+          node-version: 26
           cache: npm
 
       - name: Install Dependencies
@@ -36,11 +42,21 @@ jobs:
 
       - name: Lint Code Base
         id: super-linter
-        uses: super-linter/super-linter/slim@v5
+        uses: super-linter/super-linter/slim@2da136927bd4a73596db63044b504547c62cb854 # v9.0.0
         env:
           DEFAULT_BRANCH: main
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TYPESCRIPT_DEFAULT_STYLE: prettier
           VALIDATE_JSCPD: false
+          # ESLint is run by `npm run lint` in ci.yml. super-linter v8+ only
+          # supports the flat config format, so skip its ESLint validation.
+          VALIDATE_JAVASCRIPT_ES: false
+          VALIDATE_TYPESCRIPT_ES: false
+          # This repository uses Prettier and ESLint. Biome would duplicate
+          # them with different rules.
+          VALIDATE_BIOME_FORMAT: false
+          VALIDATE_BIOME_LINT: false
+          # GitHub Actions workflows are already checked by actionlint and
+          # zizmor, so skip Checkov.
+          VALIDATE_CHECKOV: false
           VALIDATE_ALL_CODEBASE: false
           FILTER_REGEX_EXCLUDE: (.husky/commit-msg|dist/)

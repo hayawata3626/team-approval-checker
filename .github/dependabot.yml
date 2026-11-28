@@ -7,6 +7,8 @@ updates:
       - actions
     schedule:
       interval: daily
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: npm
     directory: /
@@ -15,3 +17,5 @@ updates:
       - npm
     schedule:
       interval: daily
+    cooldown:
+      default-days: 7

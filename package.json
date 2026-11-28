@@ -26,16 +26,14 @@
   },
   "scripts": {
     "bundle": "npm run format:write && npm run package",
-    "ci-test": "vitest run",
     "format:write": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "oxlint --type-aware",
     "typecheck": "tsc --noEmit -p tsconfig.check.json",
     "package": "rolldown --config rolldown.config.mjs",
     "package:watch": "npm run package -- --watch",
-    "test": "(vitest run && make-coverage-badge --output-path ./badges/coverage.svg) || make-coverage-badge --output-path ./badges/coverage.svg",
-    "all": "npm run format:write && npm run lint && npm run typecheck && npm run test && npm run package",
-    "prepare": "husky install"
+    "test": "vitest run",
+    "all": "npm run format:write && npm run lint && npm run typecheck && npm run test && npm run package"
   },
   "license": "MIT",
   "dependencies": {
@@ -43,13 +41,7 @@
     "@actions/github": "^9.1.1"
   },
   "devDependencies": {
-    "@commitlint/cli": "^19.8.1",
-    "@commitlint/config-conventional": "^20.3.1",
     "@types/node": "^25.0.7",
-    "@vitest/coverage-v8": "^5.1.2",
-    "husky": "^9.1.7",
-    "js-yaml": "^4.1.1",
-    "make-coverage-badge": "^1.2.0",
     "nock": "^14.0.11",
     "oxlint": "^1.95.0",
     "oxlint-tsgolint": "^7.0.2009",

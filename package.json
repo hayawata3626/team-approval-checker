@@ -31,7 +31,7 @@
     "format:check": "prettier --check .",
     "lint": "oxlint --type-aware",
     "typecheck": "tsc --noEmit -p tsconfig.check.json",
-    "package": "rollup --config rollup.config.mjs",
+    "package": "rolldown --config rolldown.config.mjs",
     "package:watch": "npm run package -- --watch",
     "test": "(vitest run && make-coverage-badge --output-path ./badges/coverage.svg) || make-coverage-badge --output-path ./badges/coverage.svg",
     "all": "npm run format:write && npm run lint && npm run typecheck && npm run test && npm run package",
@@ -45,10 +45,6 @@
   "devDependencies": {
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^20.3.1",
-    "@rollup/plugin-commonjs": "^29.0.3",
-    "@rollup/plugin-json": "^6.1.0",
-    "@rollup/plugin-node-resolve": "^16.0.3",
-    "@rollup/plugin-typescript": "^12.3.1",
     "@types/node": "^25.0.7",
     "@vitest/coverage-v8": "^5.1.2",
     "husky": "^9.1.7",
@@ -58,9 +54,7 @@
     "oxlint": "^1.95.0",
     "oxlint-tsgolint": "^7.0.2009",
     "prettier": "^3.7.4",
-    "rollup": "^4.68.8",
-    "rollup-plugin-license": "^3.7.2",
-    "tslib": "^2.9.1",
+    "rolldown": "^1.3.4",
     "typescript": "^5.9.3",
     "vitest": "^5.1.2"
   }

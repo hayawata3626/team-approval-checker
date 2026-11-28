@@ -26,57 +26,18 @@
   },
   "scripts": {
     "bundle": "npm run format:write && npm run package",
-    "ci-test": "NODE_OPTIONS=--experimental-vm-modules jest",
+    "ci-test": "vitest run",
     "format:write": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "oxlint --type-aware",
     "typecheck": "tsc --noEmit -p tsconfig.check.json",
     "package": "rollup --config rollup.config.mjs",
     "package:watch": "npm run package -- --watch",
-    "test": "(NODE_OPTIONS=--experimental-vm-modules jest && make-coverage-badge --output-path ./badges/coverage.svg) || make-coverage-badge --output-path ./badges/coverage.svg",
+    "test": "(vitest run && make-coverage-badge --output-path ./badges/coverage.svg) || make-coverage-badge --output-path ./badges/coverage.svg",
     "all": "npm run format:write && npm run lint && npm run typecheck && npm run test && npm run package",
     "prepare": "husky install"
   },
   "license": "MIT",
-  "jest": {
-    "verbose": true,
-    "clearMocks": true,
-    "testEnvironment": "node",
-    "moduleFileExtensions": [
-      "js",
-      "ts"
-    ],
-    "testMatch": [
-      "**/*.test.ts"
-    ],
-    "testPathIgnorePatterns": [
-      "/node_modules/",
-      "/dist/"
-    ],
-    "transform": {
-      "^.+\\.ts$": [
-        "ts-jest",
-        {
-          "useESM": true
-        }
-      ]
-    },
-    "coverageReporters": [
-      "json-summary",
-      "text",
-      "lcov"
-    ],
-    "collectCoverage": true,
-    "collectCoverageFrom": [
-      "./src/**"
-    ],
-    "extensionsToTreatAsEsm": [
-      ".ts"
-    ],
-    "moduleNameMapper": {
-      "^(\\.{1,2}/.*)\\.js$": "$1"
-    }
-  },
   "dependencies": {
     "@actions/core": "^3.0.1",
     "@actions/github": "^9.1.1"
@@ -88,10 +49,9 @@
     "@rollup/plugin-json": "^6.1.0",
     "@rollup/plugin-node-resolve": "^16.0.3",
     "@rollup/plugin-typescript": "^12.3.1",
-    "@types/jest": "^29.5.14",
     "@types/node": "^25.0.7",
+    "@vitest/coverage-v8": "^5.1.2",
     "husky": "^9.1.7",
-    "jest": "^29.7.0",
     "js-yaml": "^4.1.1",
     "make-coverage-badge": "^1.2.0",
     "nock": "^14.0.11",
@@ -100,8 +60,8 @@
     "prettier": "^3.7.4",
     "rollup": "^4.68.8",
     "rollup-plugin-license": "^3.7.2",
-    "ts-jest": "^29.4.6",
     "tslib": "^2.9.1",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^5.1.2"
   }
 }

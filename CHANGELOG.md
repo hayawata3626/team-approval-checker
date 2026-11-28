@@ -1,5 +1,23 @@
 # Changelog
 
+## [2.0.0](https://github.com/hayawata3626/team-approval-checker/compare/v1.2.2...v2.0.0) (2026-11-28)
+
+
+### ⚠ BREAKING CHANGES
+
+* the action now runs on Node.js 24 (runs.using: node24), which requires Actions Runner v2.327.1 or later.
+
+### Bug Fixes
+
+* count each reviewer's latest review once and fail on invalid conditions ([e0a031a](https://github.com/hayawata3626/team-approval-checker/commit/e0a031af6fb87fe0d7f084f11e92d9eb47adaa00))
+* count each reviewer's latest review once and fail on invalid conditions ([f2b2656](https://github.com/hayawata3626/team-approval-checker/commit/f2b26561e903266c8bfe5bd43cd7032a08a0bb40))
+* **deps:** upgrade axios to 1.21.1 and [@actions](https://github.com/actions) packages to fix vulnerabilities ([2b36816](https://github.com/hayawata3626/team-approval-checker/commit/2b36816f0ce08927cb596d533162f63bffb73954))
+
+
+### Build System
+
+* migrate to ESM and upgrade @actions/core to v3, @actions/github to v9 ([7e3b2b3](https://github.com/hayawata3626/team-approval-checker/commit/7e3b2b3f17d43b36ad87531a268c32a708acbbee))
+
 ## [1.2.2](https://github.com/hayawata3626/team-approval-checker/compare/v1.2.1...v1.2.2) (2026-04-13)
 
 

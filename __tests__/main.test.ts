@@ -16,8 +16,15 @@ const context = {
   } as { pull_request?: { number: number } }
 }
 
+// `@actions/github` sends requests with undici's own `fetch`, which nock does
+// not intercept. Use the global `fetch` so that nock can mock the API.
+const { getOctokit } = await import('@actions/github')
+
 jest.unstable_mockModule('@actions/core', () => ({ getInput, setFailed }))
-jest.unstable_mockModule('@actions/github', () => ({ context }))
+jest.unstable_mockModule('@actions/github', () => ({
+  context,
+  getOctokit: (token: string) => getOctokit(token, { request: { fetch } })
+}))
 
 const { run, getApprovers, parseConditions } = await import('../src/main.js')
 
@@ -29,7 +36,7 @@ type ReviewFixture = [state: string, login: string]
 function mockReviews(reviews: ReviewFixture[]): void {
   nock('https://api.github.com')
     .get('/repos/owner/repo/pulls/1/reviews')
-    .query({ page: 1, per_page: 100 })
+    .query({ per_page: 100 })
     .reply(
       200,
       reviews.map(([state, login], index) => ({
@@ -43,7 +50,7 @@ function mockReviews(reviews: ReviewFixture[]): void {
 function mockTeam(team: string, logins: string[]): void {
   nock('https://api.github.com')
     .get(`/orgs/owner/teams/${team}/members`)
-    .query({ page: 1, per_page: 100 })
+    .query({ per_page: 100 })
     .reply(
       200,
       logins.map(login => ({ login }))
@@ -140,8 +147,10 @@ describe('run function', () => {
     mockReviews([['APPROVED', 'late-member']])
     nock('https://api.github.com')
       .get('/orgs/owner/teams/team1/members')
-      .query({ page: 1, per_page: 100 })
-      .reply(200, firstPage)
+      .query({ per_page: 100 })
+      .reply(200, firstPage, {
+        Link: '<https://api.github.com/orgs/owner/teams/team1/members?per_page=100&page=2>; rel="next"'
+      })
       .get('/orgs/owner/teams/team1/members')
       .query({ page: 2, per_page: 100 })
       .reply(200, [{ login: 'late-member' }])
@@ -183,9 +192,7 @@ describe('run function', () => {
 
     await run()
 
-    expect(setFailed).toHaveBeenCalledWith(
-      'Request failed with status code 404'
-    )
+    expect(setFailed).toHaveBeenCalledWith(expect.stringContaining('Not Found'))
   })
 })
 

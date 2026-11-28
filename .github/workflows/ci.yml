@@ -48,5 +48,52 @@ jobs:
         run: npm run typecheck
 
       - name: Test
-        id: npm-ci-test
-        run: npm run ci-test
+        id: npm-test
+        run: npm test
+
+  commitlint:
+    name: Commitlint
+    # Check the commit messages and the title of pull requests. Pull requests
+    # can be merged with a merge commit, squashed or rebased, and a squashed
+    # commit uses the pull request title as its message.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        id: checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+
+      # Fetch the commits of the pull request and the parent of the first one.
+      - name: Fetch Commits
+        id: fetch
+        env:
+          COMMITS: ${{ github.event.pull_request.commits }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: git fetch --no-tags --deepen="$COMMITS" origin "$HEAD_SHA"
+
+      - name: Setup Node.js
+        id: setup-node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 26
+          package-manager-cache: false
+
+      - name: Install Dependencies
+        id: npm-ci
+        run: npm ci
+
+      - name: Check Commit Messages
+        id: commits
+        env:
+          COMMITS: ${{ github.event.pull_request.commits }}
+        run: npx commitlint --from "HEAD~$COMMITS" --to HEAD --verbose
+
+      - name: Check Pull Request Title
+        id: title
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: printf '%s\n' "$PR_TITLE" | npx commitlint --verbose

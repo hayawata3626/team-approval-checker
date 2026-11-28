@@ -1,8 +1,16 @@
-import { jest } from '@jest/globals'
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  it,
+  vi
+} from 'vitest'
 import nock from 'nock'
 
-const getInput = jest.fn<typeof import('@actions/core').getInput>()
-const setFailed = jest.fn<typeof import('@actions/core').setFailed>()
+const getInput = vi.fn<typeof import('@actions/core').getInput>()
+const setFailed = vi.fn<typeof import('@actions/core').setFailed>()
 
 const context = {
   repo: {
@@ -20,8 +28,8 @@ const context = {
 // not intercept. Use the global `fetch` so that nock can mock the API.
 const { getOctokit } = await import('@actions/github')
 
-jest.unstable_mockModule('@actions/core', () => ({ getInput, setFailed }))
-jest.unstable_mockModule('@actions/github', () => ({
+vi.doMock('@actions/core', () => ({ getInput, setFailed }))
+vi.doMock('@actions/github', () => ({
   context,
   getOctokit: (token: string) => getOctokit(token, { request: { fetch } })
 }))

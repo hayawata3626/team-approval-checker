@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["eslint", "typescript", "unicorn", "oxc", "import", "jest"],
+  "plugins": ["eslint", "typescript", "unicorn", "oxc", "import", "vitest"],
   "categories": {
     "correctness": "error"
   },
@@ -49,9 +49,8 @@
   "overrides": [
     {
       "files": ["__tests__/**"],
-      "env": { "jest": true },
       "rules": {
-        "jest/require-to-throw-message": "off"
+        "vitest/require-to-throw-message": "off"
       }
     }
   ]

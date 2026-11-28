@@ -1,12 +1,12 @@
 /**
  * Unit tests for the action's entrypoint, src/index.ts
  */
-import { jest } from '@jest/globals'
+import { describe, expect, it, vi } from 'vitest'
 
-const run = jest.fn<() => Promise<void>>()
+const run = vi.fn<() => Promise<void>>()
 
 // Mock the action's main function
-jest.unstable_mockModule('../src/main.js', () => ({ run }))
+vi.doMock('../src/main.js', () => ({ run }))
 
 describe('index', () => {
   it('calls run when imported', async () => {

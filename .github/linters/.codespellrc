@@ -1,7 +1,0 @@
-# Based on super-linter's default codespell configuration (TEMPLATES/.codespellrc)
-[codespell]
-check-hidden =
-skip = package-lock.json,*/package-lock.json,*/go.mod,*/go.sum,*.log,.git
-# `thirdParty` is an option name of rollup-plugin-license (rollup.config.mjs)
-# `afterAll` is a Jest hook (__tests__/)
-ignore-words-list = thirdparty,afterall

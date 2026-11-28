@@ -1,6 +1,5 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
-import axios from 'axios'
 import { Member, Review } from './types.js'
 
 type Condition = {
@@ -22,39 +21,6 @@ const DECISIVE_REVIEW_STATES = new Set([
   'CHANGES_REQUESTED',
   'DISMISSED'
 ])
-
-async function getAllPages<T>(url: string, token: string): Promise<T[]> {
-  const perPage = 100
-  let items: T[] = []
-  let page = 1
-
-  while (true) {
-    const response = await axios.get(url, {
-      headers: {
-        Accept: 'application/vnd.github.v3+json',
-        Authorization: `token ${token}`
-      },
-      params: {
-        page,
-        per_page: perPage
-      }
-    })
-
-    if (!Array.isArray(response.data)) {
-      throw new Error(`Unexpected response from ${url}`)
-    }
-
-    items = items.concat(response.data as T[])
-
-    if (response.data.length < perPage) {
-      break
-    }
-
-    page++
-  }
-
-  return items
-}
 
 /**
  * Parses and validates the `conditions` input.
@@ -126,9 +92,11 @@ export async function run(): Promise<void> {
       return
     }
 
-    const allReviews = await getAllPages<Review>(
-      `https://api.github.com/repos/${owner}/${repo}/pulls/${pullNumber}/reviews`,
-      GITHUB_TOKEN
+    const octokit = github.getOctokit(GITHUB_TOKEN)
+
+    const allReviews: Review[] = await octokit.paginate(
+      octokit.rest.pulls.listReviews,
+      { owner, repo, pull_number: pullNumber, per_page: 100 }
     )
 
     if (allReviews.length === 0) {
@@ -140,9 +108,9 @@ export async function run(): Promise<void> {
 
     const teamApprovalStatus: TeamApprovalStatus[] = await Promise.all(
       conditions.map(async c => {
-        const members = await getAllPages<Member>(
-          `https://api.github.com/orgs/${owner}/teams/${encodeURIComponent(c.team)}/members`,
-          GITHUB_TOKEN
+        const members: Member[] = await octokit.paginate(
+          octokit.rest.teams.listMembersInOrg,
+          { org: owner, team_slug: c.team, per_page: 100 }
         )
 
         return {

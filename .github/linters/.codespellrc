@@ -3,4 +3,5 @@
 check-hidden =
 skip = package-lock.json,*/package-lock.json,*/go.mod,*/go.sum,*.log,.git
 # `thirdParty` is an option name of rollup-plugin-license (rollup.config.mjs)
-ignore-words-list = thirdparty
+# `afterAll` is a Jest hook (__tests__/)
+ignore-words-list = thirdparty,afterall

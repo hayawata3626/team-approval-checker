@@ -59148,28 +59148,81 @@ const {
   create,
 } = axios;
 
-async function getAllReviews(owner, repo, pullNumber, GITHUB_TOKEN) {
+// Review states that replace a reviewer's previous decision. `COMMENTED`
+// and `PENDING` reviews do not change whether a reviewer has approved.
+const DECISIVE_REVIEW_STATES = new Set([
+    'APPROVED',
+    'CHANGES_REQUESTED',
+    'DISMISSED'
+]);
+async function getAllPages(url, token) {
     const perPage = 100;
-    let allReviews = [];
+    let items = [];
     let page = 1;
     while (true) {
-        const reviewsResponse = await axios.get(`https://api.github.com/repos/${owner}/${repo}/pulls/${pullNumber}/reviews`, {
+        const response = await axios.get(url, {
             headers: {
                 Accept: 'application/vnd.github.v3+json',
-                Authorization: `token ${GITHUB_TOKEN}`
+                Authorization: `token ${token}`
             },
             params: {
                 page,
                 per_page: perPage
             }
         });
-        allReviews = allReviews.concat(reviewsResponse.data);
-        if (reviewsResponse.data.length < perPage) {
+        if (!Array.isArray(response.data)) {
+            throw new Error(`Unexpected response from ${url}`);
+        }
+        items = items.concat(response.data);
+        if (response.data.length < perPage) {
             break;
         }
         page++;
     }
-    return allReviews;
+    return items;
+}
+/**
+ * Parses and validates the `conditions` input.
+ * @param input The raw `conditions` input.
+ * @returns The validated conditions.
+ */
+function parseConditions(input) {
+    const parsed = JSON.parse(input);
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+        throw new Error('`conditions` must be a non-empty JSON array.');
+    }
+    return parsed.map((value, index) => {
+        const condition = value;
+        if (typeof condition?.team !== 'string' ||
+            condition.team === '' ||
+            !Number.isInteger(condition.minimumCount) ||
+            condition.minimumCount < 1) {
+            throw new Error(`\`conditions[${index}]\` must have a non-empty string \`team\` and an integer \`minimumCount\` of 1 or more.`);
+        }
+        return { team: condition.team, minimumCount: condition.minimumCount };
+    });
+}
+/**
+ * Returns the logins of the reviewers whose latest decisive review is an
+ * approval. Each reviewer is counted once, and a later request for changes
+ * or a dismissal cancels an earlier approval.
+ * @param reviews All reviews of the pull request.
+ * @returns The logins of the approvers.
+ */
+function getApprovers(reviews) {
+    const latestStates = new Map();
+    for (const review of [...reviews].sort((a, b) => a.id - b.id)) {
+        if (review.user && DECISIVE_REVIEW_STATES.has(review.state)) {
+            latestStates.set(review.user.login, review.state);
+        }
+    }
+    const approvers = new Set();
+    for (const [login, state] of latestStates) {
+        if (state === 'APPROVED') {
+            approvers.add(login);
+        }
+    }
+    return approvers;
 }
 /**
  * The main function for the action.
@@ -59177,52 +59230,38 @@ async function getAllReviews(owner, repo, pullNumber, GITHUB_TOKEN) {
  */
 async function run() {
     try {
-        const conditionsInput = getInput('conditions');
-        const conditions = JSON.parse(conditionsInput);
+        const conditions = parseConditions(getInput('conditions'));
         const owner = context.repo.owner;
         const repo = context.repo.repo;
-        const pullNumber = context.payload.pull_request
-            ?.number;
+        const pullNumber = context.payload.pull_request?.number;
         const GITHUB_TOKEN = getInput('github-token');
-        const allReviews = await getAllReviews(owner, repo, pullNumber, GITHUB_TOKEN);
+        if (typeof pullNumber !== 'number') {
+            setFailed('This action must run on a pull request event.');
+            return;
+        }
+        const allReviews = await getAllPages(`https://api.github.com/repos/${owner}/${repo}/pulls/${pullNumber}/reviews`, GITHUB_TOKEN);
         if (allReviews.length === 0) {
             setFailed('There are no reviews for this pull request yet.');
             return;
         }
-        const approvedReviews = allReviews.filter((review) => review.state === 'APPROVED');
+        const approvers = getApprovers(allReviews);
         const teamApprovalStatus = await Promise.all(conditions.map(async (c) => {
-            const res = await axios.get(`https://api.github.com/orgs/${owner}/teams/${c.team}/members`, {
-                headers: {
-                    Accept: 'application/vnd.github.v3+json',
-                    Authorization: `token ${GITHUB_TOKEN}`
-                }
-            });
-            if (!res.data) {
-                setFailed('There are no teams for this organization. Or the url is incorrect.');
-            }
-            const members = res.data;
+            const members = await getAllPages(`https://api.github.com/orgs/${owner}/teams/${encodeURIComponent(c.team)}/members`, GITHUB_TOKEN);
             return {
                 team: c.team,
                 minimumCount: c.minimumCount,
                 members,
-                actuallCount: 0
+                actualCount: members.filter(member => approvers.has(member.login))
+                    .length
             };
         }));
-        for (const review of approvedReviews) {
-            for (const conditionResult of teamApprovalStatus) {
-                if (conditionResult.members.some(member => member.login === review.user.login)) {
-                    conditionResult.actuallCount++;
-                }
-            }
-        }
-        const isPassAllConditions = teamApprovalStatus.every((conditionResult) => conditionResult.actuallCount >= conditionResult.minimumCount);
+        const isPassAllConditions = teamApprovalStatus.every((conditionResult) => conditionResult.actualCount >= conditionResult.minimumCount);
         if (!isPassAllConditions) {
             setFailed('The pull request is not approved based on the specified conditions.');
         }
     }
     catch (error) {
-        if (error instanceof Error)
-            setFailed(error.message);
+        setFailed(error instanceof Error ? error.message : String(error));
     }
 }
 

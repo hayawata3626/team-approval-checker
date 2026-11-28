@@ -8,50 +8,105 @@ type Condition = {
   minimumCount: number
 }
 
-type Parameters = Condition[]
-
 type TeamApprovalStatus = {
   team: string
   members: Member[]
   minimumCount: number
-  actuallCount: number
+  actualCount: number
 }
 
-async function getAllReviews(
-  owner: string,
-  repo: string,
-  pullNumber: number,
-  GITHUB_TOKEN: string
-): Promise<Review[]> {
+// Review states that replace a reviewer's previous decision. `COMMENTED`
+// and `PENDING` reviews do not change whether a reviewer has approved.
+const DECISIVE_REVIEW_STATES = new Set([
+  'APPROVED',
+  'CHANGES_REQUESTED',
+  'DISMISSED'
+])
+
+async function getAllPages<T>(url: string, token: string): Promise<T[]> {
   const perPage = 100
-  let allReviews: Review[] = []
+  let items: T[] = []
   let page = 1
 
   while (true) {
-    const reviewsResponse = await axios.get(
-      `https://api.github.com/repos/${owner}/${repo}/pulls/${pullNumber}/reviews`,
-      {
-        headers: {
-          Accept: 'application/vnd.github.v3+json',
-          Authorization: `token ${GITHUB_TOKEN}`
-        },
-        params: {
-          page,
-          per_page: perPage
-        }
+    const response = await axios.get(url, {
+      headers: {
+        Accept: 'application/vnd.github.v3+json',
+        Authorization: `token ${token}`
+      },
+      params: {
+        page,
+        per_page: perPage
       }
-    )
+    })
 
-    allReviews = allReviews.concat(reviewsResponse.data)
+    if (!Array.isArray(response.data)) {
+      throw new Error(`Unexpected response from ${url}`)
+    }
 
-    if (reviewsResponse.data.length < perPage) {
+    items = items.concat(response.data as T[])
+
+    if (response.data.length < perPage) {
       break
     }
 
     page++
   }
 
-  return allReviews
+  return items
+}
+
+/**
+ * Parses and validates the `conditions` input.
+ * @param input The raw `conditions` input.
+ * @returns The validated conditions.
+ */
+export function parseConditions(input: string): Condition[] {
+  const parsed: unknown = JSON.parse(input)
+
+  if (!Array.isArray(parsed) || parsed.length === 0) {
+    throw new Error('`conditions` must be a non-empty JSON array.')
+  }
+
+  return parsed.map((value: unknown, index: number) => {
+    const condition = value as Partial<Condition> | null
+    if (
+      typeof condition?.team !== 'string' ||
+      condition.team === '' ||
+      !Number.isInteger(condition.minimumCount) ||
+      (condition.minimumCount as number) < 1
+    ) {
+      throw new Error(
+        `\`conditions[${index}]\` must have a non-empty string \`team\` and an integer \`minimumCount\` of 1 or more.`
+      )
+    }
+    return { team: condition.team, minimumCount: condition.minimumCount }
+  }) as Condition[]
+}
+
+/**
+ * Returns the logins of the reviewers whose latest decisive review is an
+ * approval. Each reviewer is counted once, and a later request for changes
+ * or a dismissal cancels an earlier approval.
+ * @param reviews All reviews of the pull request.
+ * @returns The logins of the approvers.
+ */
+export function getApprovers(reviews: Review[]): Set<string> {
+  const latestStates = new Map<string, string>()
+
+  for (const review of [...reviews].sort((a, b) => a.id - b.id)) {
+    if (review.user && DECISIVE_REVIEW_STATES.has(review.state)) {
+      latestStates.set(review.user.login, review.state)
+    }
+  }
+
+  const approvers = new Set<string>()
+  for (const [login, state] of latestStates) {
+    if (state === 'APPROVED') {
+      approvers.add(login)
+    }
+  }
+  return approvers
 }
 
 /**
@@ -60,18 +115,19 @@ async function getAllReviews(
  */
 export async function run(): Promise<void> {
   try {
-    const conditionsInput = core.getInput('conditions')
-    const conditions: Parameters = JSON.parse(conditionsInput)
+    const conditions = parseConditions(core.getInput('conditions'))
     const owner: string = github.context.repo.owner
     const repo: string = github.context.repo.repo
-    const pullNumber: number = github.context.payload.pull_request
-      ?.number as number
+    const pullNumber = github.context.payload.pull_request?.number
     const GITHUB_TOKEN: string = core.getInput('github-token')
 
-    const allReviews = await getAllReviews(
-      owner,
-      repo,
-      pullNumber,
+    if (typeof pullNumber !== 'number') {
+      core.setFailed('This action must run on a pull request event.')
+      return
+    }
+
+    const allReviews = await getAllPages<Review>(
+      `https://api.github.com/repos/${owner}/${repo}/pulls/${pullNumber}/reviews`,
       GITHUB_TOKEN
     )
 
@@ -80,54 +136,28 @@ export async function run(): Promise<void> {
       return
     }
 
-    const approvedReviews = allReviews.filter(
-      (review: Review) => review.state === 'APPROVED'
-    )
+    const approvers = getApprovers(allReviews)
 
     const teamApprovalStatus: TeamApprovalStatus[] = await Promise.all(
       conditions.map(async c => {
-        const res = await axios.get(
-          `https://api.github.com/orgs/${owner}/teams/${c.team}/members`,
-          {
-            headers: {
-              Accept: 'application/vnd.github.v3+json',
-              Authorization: `token ${GITHUB_TOKEN}`
-            }
-          }
+        const members = await getAllPages<Member>(
+          `https://api.github.com/orgs/${owner}/teams/${encodeURIComponent(c.team)}/members`,
+          GITHUB_TOKEN
         )
-
-        if (!res.data) {
-          core.setFailed(
-            'There are no teams for this organization. Or the url is incorrect.'
-          )
-        }
-
-        const members = res.data
 
         return {
           team: c.team,
           minimumCount: c.minimumCount,
           members,
-          actuallCount: 0
+          actualCount: members.filter(member => approvers.has(member.login))
+            .length
         }
       })
     )
 
-    for (const review of approvedReviews) {
-      for (const conditionResult of teamApprovalStatus) {
-        if (
-          conditionResult.members.some(
-            member => member.login === review.user.login
-          )
-        ) {
-          conditionResult.actuallCount++
-        }
-      }
-    }
-
     const isPassAllConditions = teamApprovalStatus.every(
       (conditionResult: TeamApprovalStatus) =>
-        conditionResult.actuallCount >= conditionResult.minimumCount
+        conditionResult.actualCount >= conditionResult.minimumCount
     )
 
     if (!isPassAllConditions) {
@@ -136,6 +166,6 @@ export async function run(): Promise<void> {
       )
     }
   } catch (error) {
-    if (error instanceof Error) core.setFailed(error.message)
+    core.setFailed(error instanceof Error ? error.message : String(error))
   }
 }

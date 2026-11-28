@@ -4,74 +4,242 @@ import nock from 'nock'
 const getInput = jest.fn<typeof import('@actions/core').getInput>()
 const setFailed = jest.fn<typeof import('@actions/core').setFailed>()
 
-jest.unstable_mockModule('@actions/core', () => ({ getInput, setFailed }))
-jest.unstable_mockModule('@actions/github', () => ({
-  context: {
-    repo: {
-      owner: 'owner',
-      repo: 'repo'
-    },
-    payload: {
-      pull_request: {
-        number: 1
-      }
+const context = {
+  repo: {
+    owner: 'owner',
+    repo: 'repo'
+  },
+  payload: {
+    pull_request: {
+      number: 1
     }
-  }
-}))
+  } as { pull_request?: { number: number } }
+}
 
-const { run } = await import('../src/main.js')
+jest.unstable_mockModule('@actions/core', () => ({ getInput, setFailed }))
+jest.unstable_mockModule('@actions/github', () => ({ context }))
+
+const { run, getApprovers, parseConditions } = await import('../src/main.js')
+
+const NOT_APPROVED =
+  'The pull request is not approved based on the specified conditions.'
+
+type ReviewFixture = [state: string, login: string]
+
+function mockReviews(reviews: ReviewFixture[]): void {
+  nock('https://api.github.com')
+    .get('/repos/owner/repo/pulls/1/reviews')
+    .query({ page: 1, per_page: 100 })
+    .reply(
+      200,
+      reviews.map(([state, login], index) => ({
+        id: index + 1,
+        state,
+        user: { login }
+      }))
+    )
+}
+
+function mockTeam(team: string, logins: string[]): void {
+  nock('https://api.github.com')
+    .get(`/orgs/owner/teams/${team}/members`)
+    .query({ page: 1, per_page: 100 })
+    .reply(
+      200,
+      logins.map(login => ({ login }))
+    )
+}
+
+function mockInputs(conditions: string): void {
+  getInput.mockImplementation(name =>
+    name === 'conditions' ? conditions : 'GITHUB_TOKEN'
+  )
+}
+
+beforeAll(() => {
+  nock.disableNetConnect()
+})
+
+afterEach(() => {
+  nock.cleanAll()
+  context.payload = { pull_request: { number: 1 } }
+})
+
+afterAll(() => {
+  nock.enableNetConnect()
+})
 
 describe('run function', () => {
   it('should not pass all conditions if there are not enough approved reviews', async () => {
-    nock('https://api.github.com')
-      .get('/repos/owner/repo/pulls/1/reviews')
-      .query({ page: 1, per_page: 100 })
-      .reply(200, [
-        { state: 'PENDING', user: { login: 'user1' } },
-        { state: 'PENDING', user: { login: 'user2' } }
-      ])
-      .get('/orgs/owner/teams/team1/members')
-      .reply(200, [{ login: 'user1' }, { login: 'user2' }])
-      .get('/orgs/owner/teams/team2/members')
-      .reply(200, [{ login: 'user3' }, { login: 'user4' }])
-    getInput
-      .mockImplementationOnce(
-        () =>
-          '[{"team": "team1", "minimumCount": 1}, {"team": "team2", "minimumCount": 3}]'
-      )
-      .mockImplementationOnce(() => 'GITHUB_TOKEN')
+    mockReviews([
+      ['PENDING', 'user1'],
+      ['PENDING', 'user2']
+    ])
+    mockTeam('team1', ['user1', 'user2'])
+    mockTeam('team2', ['user3', 'user4'])
+    mockInputs(
+      '[{"team": "team1", "minimumCount": 1}, {"team": "team2", "minimumCount": 3}]'
+    )
 
     await run()
-    expect(setFailed).toHaveBeenCalledWith(
-      'The pull request is not approved based on the specified conditions.'
-    )
+
+    expect(setFailed).toHaveBeenCalledWith(NOT_APPROVED)
   })
 
   it('should pass all conditions if there are enough approved reviews', async () => {
-    nock('https://api.github.com')
-      .get('/repos/owner/repo/pulls/1/reviews')
-      .reply(200, [
-        { state: 'APPROVED', user: { login: 'user1' } },
-        { state: 'APPROVED', user: { login: 'user2' } },
-        { state: 'APPROVED', user: { login: 'user3' } },
-        { state: 'APPROVED', user: { login: 'user4' } },
-        { state: 'APPROVED', user: { login: 'user5' } }
-      ])
-      .get('/orgs/owner/team1/members')
-      .reply(200, [{ login: 'user1' }, { login: 'user2' }])
-      .get('/orgs/owner/team2/members')
-      .reply(200, [{ login: 'user3' }, { login: 'user4' }, { login: 'user5' }])
-    getInput
-      .mockImplementationOnce(
-        () =>
-          '[{"team": "team1", "minimumCount": 2}, {"team": "team2", "minimumCount": 3}]'
-      )
-      .mockImplementationOnce(() => 'GITHUB_TOKEN')
+    mockReviews([
+      ['APPROVED', 'user1'],
+      ['APPROVED', 'user2'],
+      ['APPROVED', 'user3'],
+      ['APPROVED', 'user4'],
+      ['APPROVED', 'user5']
+    ])
+    mockTeam('team1', ['user1', 'user2'])
+    mockTeam('team2', ['user3', 'user4', 'user5'])
+    mockInputs(
+      '[{"team": "team1", "minimumCount": 2}, {"team": "team2", "minimumCount": 3}]'
+    )
 
     await run()
 
-    expect(setFailed).not.toHaveBeenCalledWith(
-      'The pull request is not approved based on the specified conditions.'
+    expect(setFailed).not.toHaveBeenCalled()
+  })
+
+  it('should count each reviewer only once', async () => {
+    mockReviews([
+      ['APPROVED', 'user1'],
+      ['APPROVED', 'user1'],
+      ['APPROVED', 'user1']
+    ])
+    mockTeam('team1', ['user1', 'user2', 'user3'])
+    mockInputs('[{"team": "team1", "minimumCount": 3}]')
+
+    await run()
+
+    expect(setFailed).toHaveBeenCalledWith(NOT_APPROVED)
+  })
+
+  it('should not count an approval that was followed by a request for changes', async () => {
+    mockReviews([
+      ['APPROVED', 'user1'],
+      ['APPROVED', 'user2'],
+      ['CHANGES_REQUESTED', 'user2']
+    ])
+    mockTeam('team1', ['user1', 'user2'])
+    mockInputs('[{"team": "team1", "minimumCount": 2}]')
+
+    await run()
+
+    expect(setFailed).toHaveBeenCalledWith(NOT_APPROVED)
+  })
+
+  it('should count members on every page of the team', async () => {
+    const firstPage = Array.from({ length: 100 }, (_, i) => ({
+      login: `member${i}`
+    }))
+    mockReviews([['APPROVED', 'late-member']])
+    nock('https://api.github.com')
+      .get('/orgs/owner/teams/team1/members')
+      .query({ page: 1, per_page: 100 })
+      .reply(200, firstPage)
+      .get('/orgs/owner/teams/team1/members')
+      .query({ page: 2, per_page: 100 })
+      .reply(200, [{ login: 'late-member' }])
+    mockInputs('[{"team": "team1", "minimumCount": 1}]')
+
+    await run()
+
+    expect(setFailed).not.toHaveBeenCalled()
+  })
+
+  it('should fail if conditions is an empty array', async () => {
+    mockInputs('[]')
+
+    await run()
+
+    expect(setFailed).toHaveBeenCalledWith(
+      '`conditions` must be a non-empty JSON array.'
     )
+  })
+
+  it('should fail if it does not run on a pull request', async () => {
+    context.payload = {}
+    mockInputs('[{"team": "team1", "minimumCount": 1}]')
+
+    await run()
+
+    expect(setFailed).toHaveBeenCalledWith(
+      'This action must run on a pull request event.'
+    )
+  })
+
+  it('should fail if the GitHub API returns an error', async () => {
+    mockReviews([['APPROVED', 'user1']])
+    nock('https://api.github.com')
+      .get('/orgs/owner/teams/team1/members')
+      .query(true)
+      .reply(404, { message: 'Not Found' })
+    mockInputs('[{"team": "team1", "minimumCount": 1}]')
+
+    await run()
+
+    expect(setFailed).toHaveBeenCalledWith(
+      'Request failed with status code 404'
+    )
+  })
+})
+
+describe('getApprovers', () => {
+  const review = (
+    id: number,
+    state: string,
+    login: string | null
+  ): Parameters<typeof getApprovers>[0][number] => ({
+    id,
+    state,
+    user: login === null ? null : { login }
+  })
+
+  it('should use the latest decisive review of each reviewer', () => {
+    const approvers = getApprovers([
+      review(1, 'CHANGES_REQUESTED', 'user1'),
+      review(2, 'APPROVED', 'user1'),
+      review(3, 'APPROVED', 'user2'),
+      review(4, 'DISMISSED', 'user2'),
+      review(5, 'APPROVED', 'user3'),
+      review(6, 'COMMENTED', 'user3'),
+      review(7, 'APPROVED', null)
+    ])
+
+    expect([...approvers].sort()).toEqual(['user1', 'user3'])
+  })
+
+  it('should not depend on the order of the API response', () => {
+    const approvers = getApprovers([
+      review(2, 'CHANGES_REQUESTED', 'user1'),
+      review(1, 'APPROVED', 'user1')
+    ])
+
+    expect(approvers.size).toBe(0)
+  })
+})
+
+describe('parseConditions', () => {
+  it.each([
+    ['{"team": "team1", "minimumCount": 1}'],
+    ['[{"team": "", "minimumCount": 1}]'],
+    ['[{"team": "team1"}]'],
+    ['[{"team": "team1", "minimumCount": 0}]'],
+    ['[{"team": "team1", "minimumCount": 1.5}]'],
+    ['[{"team": "team1", "minimumCount": "2"}]'],
+    ['[null]']
+  ])('should reject %s', input => {
+    expect(() => parseConditions(input)).toThrow()
+  })
+
+  it('should accept valid conditions', () => {
+    expect(
+      parseConditions('[{"team": "team1", "minimumCount": 2, "extra": true}]')
+    ).toEqual([{ team: 'team1', minimumCount: 2 }])
   })
 })

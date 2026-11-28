@@ -197,12 +197,46 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 ---
 
+Name: @actions/http-client
+Version: 3.0.2
+License: MIT
+Private: false
+Description: Actions Http Client
+Repository: git+https://github.com/actions/toolkit.git
+Homepage: https://github.com/actions/toolkit/tree/main/packages/http-client
+License Text:
+===
+
+Actions Http Client for Node.js
+
+Copyright (c) GitHub, Inc.
+
+All rights reserved.
+
+MIT License
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+associated documentation files (the "Software"), to deal in the Software without restriction,
+including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
+LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+---
+
 Name: universal-user-agent
 Version: 7.0.3
 License: ISC
 Private: false
 Description: Get a user agent string across all JavaScript Runtime Environments
-Repository: undefined
+Repository: github:gr2m/universal-user-agent
 Author: Gregor Martynus (https://github.com/gr2m)
 License Text:
 ===
@@ -222,7 +256,7 @@ Version: 4.0.0
 License: Apache-2.0
 Private: false
 Description: asynchronous before/error/after hooks for internal functionality
-Repository: undefined
+Repository: github:gr2m/before-after-hook
 Author: Gregor Martynus
 License Text:
 ===
@@ -436,7 +470,7 @@ Version: 11.0.6
 License: MIT
 Private: false
 Description: Turns REST API endpoints into generic request options
-Repository: undefined
+Repository: github:octokit/endpoint.js
 Author: Gregor Martynus (https://github.com/gr2m)
 License Text:
 ===
@@ -470,7 +504,7 @@ Version: 3.1.1
 License: MIT
 Private: false
 Description: Create and parse HTTP Content-Type header
-Repository: undefined
+Repository: jshttp/content-type
 Author: Douglas Christopher Wilson <doug@somethingdoug.com>
 License Text:
 ===
@@ -539,7 +573,7 @@ Version: 7.1.2
 License: MIT
 Private: false
 Description: Error class for Octokit request errors
-Repository: undefined
+Repository: github:octokit/request-error.js
 Author: Gregor Martynus (https://github.com/gr2m)
 License Text:
 ===
@@ -573,7 +607,7 @@ Version: 10.0.16
 License: MIT
 Private: false
 Description: Send parameterized requests to GitHub's APIs with sensible defaults in browsers and Node
-Repository: undefined
+Repository: github:octokit/request.js
 Author: Gregor Martynus (https://github.com/gr2m)
 License Text:
 ===
@@ -607,7 +641,7 @@ Version: 9.0.6
 License: MIT
 Private: false
 Description: GitHub GraphQL API client for browsers and Node
-Repository: undefined
+Repository: github:octokit/graphql.js
 Author: Gregor Martynus (https://github.com/gr2m)
 License Text:
 ===
@@ -641,7 +675,7 @@ Version: 6.0.0
 License: MIT
 Private: false
 Description: GitHub API token authentication for browsers and Node.js
-Repository: undefined
+Repository: github:octokit/auth-token.js
 Author: Gregor Martynus (https://github.com/gr2m)
 License Text:
 ===
@@ -675,7 +709,7 @@ Version: 7.0.8
 License: MIT
 Private: false
 Description: Extendable client for GitHub's REST & GraphQL APIs
-Repository: undefined
+Repository: github:octokit/core.js
 Author: Gregor Martynus (https://github.com/gr2m)
 License Text:
 ===
@@ -709,7 +743,7 @@ Version: 17.0.0
 License: MIT
 Private: false
 Description: Octokit plugin adding one method for all of api.github.com REST API endpoints
-Repository: undefined
+Repository: github:octokit/plugin-rest-endpoint-methods.js
 Author: Gregor Martynus (https://twitter.com/gr2m)
 License Text:
 ===
@@ -729,7 +763,7 @@ Version: 14.0.0
 License: MIT
 Private: false
 Description: Octokit plugin to paginate REST API endpoint responses
-Repository: undefined
+Repository: github:octokit/plugin-paginate-rest.js
 License Text:
 ===
 

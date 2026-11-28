@@ -14,9 +14,9 @@ on:
       - main
     paths-ignore:
       - '**.md'
+  # Run on every pull request, including Markdown-only changes, so that this
+  # job can be a required status check.
   pull_request:
-    paths-ignore:
-      - '**.md'
   workflow_dispatch:
 
 permissions:
